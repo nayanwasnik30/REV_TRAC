@@ -3,140 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cultivation of Mind</title>
-    <link rel="icon" href="https://icons8.com/icon/VGdMPAs1AKPS/web-link><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <title>DSA Revision Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Set theme on initial load - this small script needs to stay in the head to prevent FOUC
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
-<body class="antialiased">
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
 
-    <video id="video-background" autoplay loop muted playsinline><source src="bg.webm" type="video/webm"></video>
-
-    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="loader"></div>
-    </div>
-
-    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl relative">
-        <header class="text-center mb-6 max-w-4xl mx-auto">
-            <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-wider leading-tight" style="text-shadow: 0 0 15px var(--theme-yellow-glow);">"Cultivation of mind should be the ultimate aim of human existence."</h1>
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="text-center md:text-left flex-1">
+                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">Cultivation of mind should be the ultimate aim of human existence.</h1>
+                <p class="text-md lg:text-lg text-gray-600 dark:text-gray-400 mt-2">Plan your spaced repetition for technical questions.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                 <!-- Dark Mode Toggle -->
+                <button id="dark-mode-toggle" class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
+                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                </button>
+                 <!-- Compact Stats Section -->
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-lg h-fit w-full max-w-xs text-center">
+                    <h2 class="text-lg font-semibold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        Your Stats
+                    </h2>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Revision Streak</p>
+                        <div id="streak-counter" class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">0</div>
+                        <p id="streak-text" class="text-xs text-gray-500 dark:text-gray-400">Keep going!</p>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <div class="flex justify-center mb-8">
-            <button id="analytics-btn" class="ds-button py-2 px-5 rounded-md"><i class="fas fa-chart-line mr-2"></i>Analytics</button>
-        </div>
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Input Form & Actions -->
+            <div class="lg:col-span-1 space-y-8">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg h-fit">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700">
+                        <h2 id="add-question-title" class="text-2xl font-semibold flex items-center gap-2 dark:text-white">
+                            <svg id="add-question-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                            <span id="add-question-title-text">Add New Question</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                             <input type="file" id="import-file-input" class="hidden" accept=".json">
+                             <button id="import-btn" title="Import Data" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-green-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                             </button>
+                             <button id="export-btn" title="Export Data" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-blue-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                             </button>
+                        </div>
+                    </div>
 
-        <!-- Main View -->
-        <main id="main-view">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 space-y-8">
-                    <div class="ds-card p-6">
-                        <h2 class="font-display text-3xl font-semibold text-white mb-4 tracking-wider">Add New Item</h2>
-                        <form id="add-item-form" class="space-y-4">
-                            <textarea id="item-question" required class="ds-input w-full rounded-md p-3 transition" rows="3" placeholder="Concept (Markdown supported)..."></textarea>
-                            <input type="url" id="item-link" class="ds-input w-full rounded-md p-3 transition" placeholder="Reference link (optional)...">
-                            <input type="text" id="item-topic" list="topics-list" class="ds-input w-full rounded-md p-3 transition" placeholder="Topic (e.g., Array)">
+                    <form id="add-question-form" class="space-y-4">
+                        <!-- Form fields -->
+                        <div>
+                            <label for="question-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Question</label>
+                            <textarea id="question-text" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="e.g., What is the time complexity of Quick Sort?" required></textarea>
+                        </div>
+                         <div>
+                            <label for="question-link" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Question Link</label>
+                            <input type="url" id="question-link" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="https://example.com/question">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="schedule-type" class="block text-sm font-medium text-slate-400 mb-2">Schedule Type</label>
-                                <select id="schedule-type" class="ds-select w-full rounded-md p-3">
-                                    <option value="smart">Smart Scheduling (Recommended)</option>
-                                    <option value="fixed">Fixed Intervals</option>
+                                <label for="question-topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Topic</label>
+                                <input type="text" id="question-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="e.g., Arrays" required>
+                            </div>
+                             <div>
+                                <label for="question-difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Difficulty</label>
+                                <select id="question-difficulty" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option>Easy</option>
+                                    <option selected>Medium</option>
+                                    <option>Hard</option>
                                 </select>
                             </div>
-                            <div id="fixed-schedule-container" class="hidden">
-                                <label for="fixed-intervals" class="block text-sm font-medium text-slate-400 mb-2">Intervals (days from creation)</label>
-                                <input type="text" id="fixed-intervals" value="3, 7, 15, 30, 60" class="ds-input w-full rounded-md p-3 transition">
-                            </div>
-                            <button type="submit" id="add-item-btn" class="ds-button w-full py-3 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span class="btn-text"><i class="fas fa-bolt mr-2"></i>Add Item</span>
-                                <span class="btn-loader hidden"></span>
-                            </button>
-                        </form>
-                    </div>
+                        </div>
+                        <div>
+                            <label for="revision-intervals" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Revision Intervals (in days)</label>
+                            <input type="text" id="revision-intervals" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Default: 3, 7, 15, 30, 60">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter comma-separated numbers for custom intervals.</p>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out flex items-center justify-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" /></svg>
+                            Add to Calendar
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-                    <div class="ds-card p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <button id="prev-month" aria-label="Previous month" class="p-2 rounded-full hover:bg-white/10 transition"><i class="fas fa-chevron-left"></i></button>
-                            <h2 id="calendar-header" class="font-display text-2xl font-semibold text-white tracking-wider"></h2>
-                            <button id="next-month" aria-label="Next month" class="p-2 rounded-full hover:bg-white/10 transition"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                        <div class="grid grid-cols-7 text-center font-display tracking-wider text-slate-400 text-sm mb-2">
-                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-                        </div>
-                        <div id="calendar-body" class="grid grid-cols-7 gap-1 place-items-center"></div>
+            <!-- Right Column: Revision Schedule & Calendar -->
+            <div class="lg:col-span-2 space-y-8">
+                 <!-- Today's Focus Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-2xl font-semibold flex items-center gap-2 dark:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Today's Focus
+                        </h2>
+                        <span id="progress-text" class="text-sm font-medium text-gray-600 dark:text-gray-400">0/0 Completed</span>
                     </div>
-
-                    <div class="ds-card p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="font-display text-3xl font-semibold text-white tracking-wider">Today's Revisions (<span id="today-count">0</span>)</h2>
-                        </div>
-                        <div id="today-revisions-list" class="space-y-3 max-h-60 overflow-y-auto pr-2"></div>
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
+                        <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div id="today-revision-list" class="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                        <!-- Today's revision items will be injected here -->
                     </div>
                 </div>
 
-                <div class="lg:col-span-2 space-y-8">
-                     <div class="ds-card p-6">
-                        <div class="flex flex-wrap items-center justify-between mb-4 gap-4">
-                            <h2 class="font-display text-3xl font-semibold text-white tracking-wider">Full Revisit Tracker</h2>
-                             <div class="flex items-center gap-4">
-                                <div id="topic-filter-container"></div>
-                                <button id="cram-btn" class="ds-button py-2 px-4 rounded-md text-sm"><i class="fas fa-brain mr-2"></i>Cram</button>
-                            </div>
-                        </div>
-                        <div id="all-items-list" class="space-y-3 max-h-[46rem] overflow-y-auto pr-2"></div>
+                 <!-- Calendar Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div id="calendar-header" class="flex items-center justify-between mb-4">
+                        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">&lt;</button>
+                        <h3 id="calendar-month-year" class="text-xl font-semibold dark:text-white"></h3>
+                        <button id="next-month" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">&gt;</button>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid"></div>
+                </div>
+
+                <!-- Revisions Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2 dark:text-white dark:border-gray-700">All Scheduled Revisions</h2>
+                    <!-- Filters -->
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                        <input type="search" id="search-filter" placeholder="Search questions..." class="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        <select id="topic-filter" class="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="">All Topics</option>
+                        </select>
+                         <select id="difficulty-filter" class="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="">All Difficulties</option>
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                    <div id="revision-list" class="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                        <!-- Revision items will be injected here -->
                     </div>
                 </div>
             </div>
+
         </main>
         
-        <!-- Analytics View -->
-        <div id="analytics-view" class="hidden">
-             <div class="mb-6">
-                 <button id="back-to-main-btn" class="text-slate-300 hover:text-[var(--theme-yellow)] transition-colors duration-200 text-lg flex items-center">
-                    <i class="fas fa-arrow-left mr-3"></i><span class="font-display text-4xl tracking-wider">Analytics</span>
-                 </button>
+        <footer class="text-center mt-12 text-gray-500 dark:text-gray-400 text-sm">
+            <p>Built to help you ace your technical interviews.</p>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="reward-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-1/4 mx-auto p-8 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800 modal-content text-center">
+             <div class="flex justify-center items-center">
+                 <img src="https://placehold.co/150x150/7c3aed/ffffff?text=🎉" alt="Trophy" class="rounded-full">
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="ds-card p-6 flex items-center space-x-4"><i class="fas fa-fire-alt text-4xl text-[var(--theme-yellow)]"></i><div><p class="text-slate-400 text-lg">Current Streak</p><p id="stats-current-streak" class="text-3xl font-bold">0</p></div></div>
-                <div class="ds-card p-6 flex items-center space-x-4"><i class="fas fa-trophy text-4xl text-[var(--theme-yellow)]"></i><div><p class="text-slate-400 text-lg">Longest Streak</p><p id="stats-longest-streak" class="text-3xl font-bold">0</p></div></div>
-                <div class="ds-card p-6 flex items-center space-x-4"><i class="fas fa-check-double text-4xl text-[var(--theme-yellow)]"></i><div><p class="text-slate-400 text-lg">Items Mastered</p><p id="stats-items-mastered" class="text-3xl font-bold">0</p></div></div>
+            <h3 id="reward-title" class="text-2xl leading-6 font-bold text-gray-900 dark:text-white mt-4"></h3>
+            <p id="reward-text" class="text-md text-gray-600 dark:text-gray-300 mt-2"></p>
+            <button class="close-modal-btn mt-6 w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700" data-modal-id="reward-modal">Continue Crushing It!</button>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border-0 w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content">
+            <h3 class="text-2xl font-medium text-gray-900 dark:text-white mb-4">Edit Question</h3>
+            <form id="edit-question-form" class="space-y-4">
+                <input type="hidden" id="edit-question-id">
+                <div>
+                    <label for="edit-question-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Question</label>
+                    <textarea id="edit-question-text" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required></textarea>
+                </div>
+                 <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-question-topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Topic</label>
+                        <input type="text" id="edit-question-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div>
+                        <label for="edit-question-difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Difficulty</label>
+                        <select id="edit-question-difficulty" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-question-link" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Question Link</label>
+                    <input type="url" id="edit-question-link" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label for="edit-question-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes / Solution</label>
+                    <textarea id="edit-question-notes" rows="6" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Add your notes or solution approach here..."></textarea>
+                </div>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" class="close-modal-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white" data-modal-id="edit-modal">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div id="notes-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border-0 w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content">
+            <div class="flex justify-between items-center pb-3 border-b dark:border-gray-700 mb-4">
+                <h3 class="text-2xl leading-6 font-medium text-gray-900 dark:text-white">Notes</h3>
+                <button class="close-modal-btn text-gray-400 hover:text-gray-600 dark:hover:text-white" data-modal-id="notes-modal">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <div class="ds-card p-6 mb-8">
-                <h3 class="font-display text-3xl text-white tracking-wider mb-4">Revision Heatmap</h3>
-                <div id="heatmap-calendar" class="space-y-4"></div>
-            </div>
-             <div class="ds-card p-6">
-                <h3 class="font-display text-3xl text-white tracking-wider mb-4">Achievements</h3>
-                <div id="achievements-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 text-center"></div>
+            <pre id="notes-content" class="notes-content dark:text-gray-300"></pre>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-1/4 mx-auto p-8 border-0 w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800 modal-content text-center">
+            <h3 id="confirm-title" class="text-xl font-bold text-gray-900 dark:text-white">Are you sure?</h3>
+            <p id="confirm-text" class="text-md text-gray-600 dark:text-gray-300 mt-2 mb-6">You won't be able to revert this.</p>
+            <div class="flex justify-center gap-4">
+                <button class="close-modal-btn bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white" data-modal-id="confirm-modal">Cancel</button>
+                <button id="confirm-action-btn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-red-700">Delete</button>
             </div>
         </div>
     </div>
 
-    <img src="zenitsu-demon-slayer..._imresizer.png" alt="Character Art" id="character-art">
-
-    <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 hidden opacity-0">
-        <div id="modal-content" class="modal-content ds-card p-8 rounded-lg w-full max-w-lg mx-auto transform scale-95 opacity-0">
-            <h3 id="modal-title" class="font-display text-3xl font-bold text-white mb-4">Confirm Action</h3>
-            <div id="modal-body" class="text-slate-300 mb-6 max-h-[60vh] overflow-y-auto"></div>
-            <div id="modal-footer" class="flex justify-end space-x-4 mt-6">
-                <button id="modal-cancel-btn" class="ds-button py-2 px-4 rounded-md">Cancel</button>
-                <button id="modal-confirm-btn" class="ds-button py-2 px-4 rounded-md">Confirm</button>
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-1/4 mx-auto p-8 border-0 w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800 modal-content text-center">
+            <h3 id="alert-title" class="text-xl font-bold text-gray-900 dark:text-white">Invalid Input</h3>
+            <p id="alert-text" class="text-md text-gray-600 dark:text-gray-300 mt-2 mb-6">Please check your input.</p>
+            <div class="flex justify-center">
+                <button class="close-modal-btn bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700" data-modal-id="alert-modal">OK</button>
             </div>
         </div>
     </div>
     
-    <div id="toast-container"></div>
-    
-    <datalist id="topics-list">
-        <option value="Array"></option><option value="Linked List"></option><option value="Hash Table"></option>
-        <option value="Stack"></option><option value="Queue"></option><option value="Tree"></option>
-        <option value="Graph"></option><option value="Heap"></option><option value="Trie"></option>
-        <option value="Sorting"></option><option value="Searching"></option><option value="Recursion"></option>
-        <option value="Dynamic Programming"></option><option value="Bit Manipulation"></option>
-    </datalist>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="script.js" defer></script>
 
-    <script type="module" src="script.js"></script>
 </body>
 </html>
+
