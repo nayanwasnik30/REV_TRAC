@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- APP STATE & CONFIG ---
     const defaultIntervals = [3, 7, 15, 30, 60];
-    let calendarDate; // MODIFIED: Will be initialized after fetching internet time.
+    let calendarDate; 
     let selectedStartDate = null;
     const rewardMilestones = {
         3: { title: "On a Roll!", text: "You've maintained a 3-day streak. Great start!" },
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         30: { title: "One Month Milestone!", text: "Incredible consistency! You're building a powerful knowledge base." }
     };
     let confirmCallback = null;
-    let timeOffset = 0; // NEW: Stores the difference between server time and client time.
+    let timeOffset = 0; 
 
     // --- DATA HANDLING ---
     const getQuestions = () => JSON.parse(localStorage.getItem('dsaQuestionsV5')) || [];
@@ -61,44 +61,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveStats = (stats) => localStorage.setItem('dsaStatsV5', JSON.stringify(stats));
     
     // --- DATE UTILS ---
-    // NEW: Returns the current date corrected with the server time offset.
     const getCorrectedDate = () => new Date(Date.now() + timeOffset);
 
-    // MODIFIED: All date functions now use the corrected date to ensure accuracy.
-    const getTodayStr = () => getCorrectedDate().toISOString().split('T')[0];
+    // MODIFIED: Manually format date to YYYY-MM-DD to avoid timezone conversion errors.
+    const dateToYYYYMMDD = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    const getTodayStr = () => dateToYYYYMMDD(getCorrectedDate());
+    
     const getYesterdayStr = () => {
         const yesterday = getCorrectedDate();
         yesterday.setDate(yesterday.getDate() - 1);
-        return yesterday.toISOString().split('T')[0];
+        return dateToYYYYMMDD(yesterday);
     };
     
-    // NEW: Fetches time from an internet API to ensure the app's date is correct.
     const syncTime = async () => {
         try {
-            const response = await fetch('https://worldtimeapi.org/api/ip');
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
             if (!response.ok) throw new Error('Network response was not ok.');
             const data = await response.json();
-            // Calculate the offset between the server's time and the client's local time.
             const serverTime = data.unixtime * 1000;
             timeOffset = serverTime - Date.now();
-            console.log('Time synchronized with internet. Offset:', timeOffset, 'ms');
+            console.log('Time synchronized with internet (Asia/Kolkata). Offset:', timeOffset, 'ms');
         } catch (error) {
             console.warn('Could not sync time with an internet source. Using local system time.', error);
-            timeOffset = 0; // Fallback to local time if API fails
+            timeOffset = 0; 
         }
     };
 
 
     // --- INITIALIZATION ---
-    // MODIFIED: `init` is now an async function to wait for time synchronization.
     const init = async () => {
-        await syncTime(); // Wait for the correct time before doing anything else.
-        
-        calendarDate = getCorrectedDate(); // Initialize calendar date with the correct time.
-
+        await syncTime();
+        calendarDate = getCorrectedDate();
         updateUI();
         setupEventListeners();
-        updateStreak(); // Check streak on load
+        updateStreak();
         applyTheme();
     };
 
@@ -122,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         calendarGrid.addEventListener('click', handleCalendarDayClick);
 
-        // Modals & Data
         editForm.addEventListener('submit', handleEditFormSubmit);
         confirmActionBtn.addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
@@ -171,24 +172,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const toggleTheme = () => {
-        if (localStorage.theme === 'dark') {
-            localStorage.theme = 'light';
-        } else {
-            localStorage.theme = 'dark';
-        }
+        localStorage.theme = localStorage.theme === 'dark' ? 'light' : 'dark';
         applyTheme();
     };
 
     // --- STREAK, REWARDS, PROGRESS LOGIC ---
     const renderProgress = (questions) => {
         const todayStr = getTodayStr();
-        const allItems = getQuestions();
-        const todaysItems = allItems.filter(q => q.revisionDates.includes(todayStr));
+        const todaysItems = questions.filter(q => q.revisionDates.includes(todayStr));
         const completedItems = todaysItems.filter(q => q.completedDates.includes(todayStr));
-        
         const total = todaysItems.length;
         const completed = completedItems.length;
-
         progressText.textContent = `${completed}/${total} Completed`;
         progressBar.style.width = total > 0 ? `${(completed / total) * 100}%` : '0%';
     };
@@ -196,9 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stats = getStats();
         const todayStr = getTodayStr();
         const yesterdayStr = getYesterdayStr();
-
-        if (stats.lastCompletedDate === todayStr) { return; } 
-        
+        if (stats.lastCompletedDate === todayStr) return;
         if (stats.lastCompletedDate === yesterdayStr) {
             stats.streak += 1;
             checkRewards(stats);
@@ -244,13 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleCalendarDayClick = (e) => {
         const dayEl = e.target.closest('.calendar-day');
         if (!dayEl || !dayEl.dataset.date) return;
-
         const clickedDate = dayEl.dataset.date;
-        if (selectedStartDate === clickedDate) {
-            selectedStartDate = null;
-        } else {
-            selectedStartDate = clickedDate;
-        }
+        selectedStartDate = selectedStartDate === clickedDate ? null : clickedDate;
         renderFormHeader();
         renderCalendar(getQuestions());
     };
@@ -267,13 +254,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // MODIFIED: Use the corrected date as the default start date.
         const startDate = selectedStartDate ? new Date(selectedStartDate + 'T00:00:00') : getCorrectedDate();
         
+        // MODIFIED: Use the new date formatter to prevent timezone errors.
         const revisionDates = intervals.map(days => {
             const result = new Date(startDate);
             result.setDate(result.getDate() + days);
-            return result.toISOString().split('T')[0];
+            return dateToYYYYMMDD(result);
         });
     
         const newQuestion = {
@@ -283,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             topic: questionTopic.value,
             difficulty: questionDifficulty.value,
             notes: '',
-            addedDate: getTodayStr(), // Use corrected date
+            addedDate: getTodayStr(),
             revisionDates: revisionDates,
             completedDates: []
         };
@@ -316,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleRevisionListClick = (e) => {
         const button = e.target.closest('button');
         const checkbox = e.target.closest('input[type="checkbox"]');
-
         if (checkbox) {
             toggleRevisionDone(parseInt(checkbox.dataset.id, 10), checkbox.dataset.date);
         } else if (button) {
@@ -370,16 +356,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let questions = getQuestions();
         const question = questions.find(q => q.id === id);
         if (!question) return;
-
         const dateIndex = question.completedDates.indexOf(date);
         const isCompleting = dateIndex === -1;
-
         if (isCompleting) {
             question.completedDates.push(date);
             if (date === getTodayStr()) {
                 const allTodaysItems = questions.filter(q => q.revisionDates.includes(date));
                 const completedTodaysItems = allTodaysItems.filter(q => q.completedDates.includes(date));
-                if (allTodaysItems.length > 0 && completedTodaysItems.length === 1) { // First completion of the day
+                if (allTodaysItems.length > 0 && completedTodaysItems.length === 1) { 
                      updateStreak();
                 }
             }
@@ -392,16 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DATA MANAGEMENT ---
     const exportData = () => {
-        const data = {
-            questions: getQuestions(),
-            stats: getStats()
-        };
+        const data = { questions: getQuestions(), stats: getStats() };
         const dataStr = JSON.stringify(data, null, 2);
         const blob = new Blob([dataStr], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        // MODIFIED: Use the corrected today string for the filename.
         a.download = `dsa_revision_data_${getTodayStr()}.json`;
         document.body.appendChild(a);
         a.click();
@@ -412,20 +392,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const importData = (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                // Basic validation
                 if (!data.questions || !Array.isArray(data.questions)) {
                    throw new Error('Invalid file format.');
                 }
-                
-                openConfirmModal(
-                    'Import Data?', 
-                    'This will replace all your current questions and stats. Make sure you have a backup if you need it.', 
-                    'Import & Replace',
+                openConfirmModal('Import Data?', 'This will replace all your current questions and stats. Make sure you have a backup if you need it.', 'Import & Replace',
                     () => {
                         saveQuestions(data.questions || []);
                         saveStats(data.stats || { streak: 0, lastCompletedDate: null, unlockedRewards: [] });
@@ -435,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                  showAlert('Failed to import file. It may be corrupted or in the wrong format.');
             } finally {
-                importFileInput.value = ''; // Reset file input
+                importFileInput.value = '';
             }
         };
         reader.readAsText(file);
@@ -476,7 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < firstDayOfMonth; i++) calendarGrid.appendChild(document.createElement('div'));
         for (let i = 1; i <= daysInMonth; i++) {
             const dayEl = document.createElement('div');
-            const currentDateStr = new Date(year, month, i).toISOString().split('T')[0];
+            // MODIFIED: Manually build the date string to prevent timezone errors.
+            const monthString = String(month + 1).padStart(2, '0');
+            const dayString = String(i).padStart(2, '0');
+            const currentDateStr = `${year}-${monthString}-${dayString}`;
+            
             dayEl.textContent = i;
             dayEl.className = 'calendar-day';
             dayEl.dataset.date = currentDateStr;
@@ -523,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = searchFilter.value.toLowerCase();
         const selectedTopic = topicFilter.value;
         const selectedDifficulty = difficultyFilter.value;
-
         return items.filter(item => {
             const textMatch = !searchTerm || item.text.toLowerCase().includes(searchTerm);
             const topicMatch = !selectedTopic || item.topic === selectedTopic;
@@ -566,22 +543,18 @@ document.addEventListener('DOMContentLoaded', () => {
         sortedDates.forEach(date => {
             let itemsForDate = applyFilters(scheduledRevisions[date]);
             if (itemsForDate.length === 0) return;
-
             hasVisibleRevisions = true;
             const dateObj = new Date(date + 'T00:00:00');
             const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
             let dateHeaderClass = "text-lg font-semibold text-gray-800 dark:text-gray-200";
             if (date === todayStr) {
                 dateHeaderClass = "text-lg font-bold text-indigo-600 dark:text-indigo-400";
             } else if (date < todayStr) {
                 dateHeaderClass = "text-lg font-semibold text-gray-500 dark:text-gray-400";
             }
-            
             const dateGroupEl = document.createElement('div');
             dateGroupEl.className = 'fade-in';
             dateGroupEl.innerHTML = `<h3 class="${dateHeaderClass}">${formattedDate} ${date === todayStr ? '(Today)' : ''}</h3>`;
-
             const ul = document.createElement('ul');
             ul.className = 'mt-2 space-y-3';
             itemsForDate.forEach(item => ul.appendChild(createRevisionListItem(item)));
@@ -597,3 +570,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start the application
     init();
 });
+
