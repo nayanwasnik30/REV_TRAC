@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- APP STATE & CONFIG ---
     const defaultIntervals = [3, 7, 15, 30, 60];
-    let calendarDate = new Date();
+    let calendarDate; // MODIFIED: Will be initialized after fetching internet time.
     let selectedStartDate = null;
     const rewardMilestones = {
         3: { title: "On a Roll!", text: "You've maintained a 3-day streak. Great start!" },
@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         30: { title: "One Month Milestone!", text: "Incredible consistency! You're building a powerful knowledge base." }
     };
     let confirmCallback = null;
+    let timeOffset = 0; // NEW: Stores the difference between server time and client time.
 
     // --- DATA HANDLING ---
     const getQuestions = () => JSON.parse(localStorage.getItem('dsaQuestionsV5')) || [];
@@ -60,15 +61,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveStats = (stats) => localStorage.setItem('dsaStatsV5', JSON.stringify(stats));
     
     // --- DATE UTILS ---
-    const getTodayStr = () => new Date().toISOString().split('T')[0];
+    // NEW: Returns the current date corrected with the server time offset.
+    const getCorrectedDate = () => new Date(Date.now() + timeOffset);
+
+    // MODIFIED: All date functions now use the corrected date to ensure accuracy.
+    const getTodayStr = () => getCorrectedDate().toISOString().split('T')[0];
     const getYesterdayStr = () => {
-        const yesterday = new Date();
+        const yesterday = getCorrectedDate();
         yesterday.setDate(yesterday.getDate() - 1);
         return yesterday.toISOString().split('T')[0];
     };
+    
+    // NEW: Fetches time from an internet API to ensure the app's date is correct.
+    const syncTime = async () => {
+        try {
+            const response = await fetch('https://worldtimeapi.org/api/ip');
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const data = await response.json();
+            // Calculate the offset between the server's time and the client's local time.
+            const serverTime = data.unixtime * 1000;
+            timeOffset = serverTime - Date.now();
+            console.log('Time synchronized with internet. Offset:', timeOffset, 'ms');
+        } catch (error) {
+            console.warn('Could not sync time with an internet source. Using local system time.', error);
+            timeOffset = 0; // Fallback to local time if API fails
+        }
+    };
+
 
     // --- INITIALIZATION ---
-    const init = () => {
+    // MODIFIED: `init` is now an async function to wait for time synchronization.
+    const init = async () => {
+        await syncTime(); // Wait for the correct time before doing anything else.
+        
+        calendarDate = getCorrectedDate(); // Initialize calendar date with the correct time.
+
         updateUI();
         setupEventListeners();
         updateStreak(); // Check streak on load
@@ -240,7 +267,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        const startDate = selectedStartDate ? new Date(selectedStartDate + 'T00:00:00') : new Date();
+        // MODIFIED: Use the corrected date as the default start date.
+        const startDate = selectedStartDate ? new Date(selectedStartDate + 'T00:00:00') : getCorrectedDate();
         
         const revisionDates = intervals.map(days => {
             const result = new Date(startDate);
@@ -255,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             topic: questionTopic.value,
             difficulty: questionDifficulty.value,
             notes: '',
-            addedDate: new Date().toISOString().split('T')[0],
+            addedDate: getTodayStr(), // Use corrected date
             revisionDates: revisionDates,
             completedDates: []
         };
@@ -373,7 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dsa_revision_data_${new Date().toISOString().split('T')[0]}.json`;
+        // MODIFIED: Use the corrected today string for the filename.
+        a.download = `dsa_revision_data_${getTodayStr()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -461,15 +490,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const createRevisionListItem = (item) => {
-         const isDone = item.completedDates.includes(item.revisionDate);
-         const difficultyColors = {
+       const isDone = item.completedDates.includes(item.revisionDate);
+       const difficultyColors = {
             Easy: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
             Medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
             Hard: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-         };
-         const li = document.createElement('li');
-         li.className = `flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-opacity ${isDone ? 'opacity-50' : ''}`;
-         li.innerHTML = `
+       };
+       const li = document.createElement('li');
+       li.className = `flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 transition-opacity ${isDone ? 'opacity-50' : ''}`;
+       li.innerHTML = `
             <input type="checkbox" data-id="${item.id}" data-date="${item.revisionDate}" ${isDone ? 'checked' : ''} class="custom-checkbox mt-1 h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
             <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -486,8 +515,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
                 </button>
             </div>
-         `;
-        return li;
+           `;
+       return li;
     };
     
     const applyFilters = (items) => {
@@ -568,4 +597,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start the application
     init();
 });
-
