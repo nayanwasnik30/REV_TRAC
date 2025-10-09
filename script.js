@@ -1,5 +1,14 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // --- DOM ELEMENT SELECTION ---
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginForm = document.getElementById('login-form');
+    const loginEmailInput = document.getElementById('login-email');
+    const loginPasswordInput = document.getElementById('login-password');
+    const registerBtn = document.getElementById('register-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailDisplay = document.getElementById('user-email-display');
+
     const form = document.getElementById('add-question-form');
     const questionText = document.getElementById('question-text');
     const questionLink = document.getElementById('question-link');
@@ -59,6 +68,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     let confirmCallback = null;
     let timeOffset = 0; 
 
+    // --- UI VIEW MANAGEMENT ---
+    const showApp = () => {
+        if (!currentUser) return;
+        userEmailDisplay.textContent = currentUser.email;
+        loginScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+    };
+
+    const showLogin = () => {
+        // Reset state
+        questions = [];
+        stats = { streak: 0, lastCompletedDate: null, unlockedRewards: [] };
+        currentUser = null;
+        userDataObjectId = null;
+        updateUI(); // Clear the UI with empty data
+        
+        appScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+    };
+
     // --- DATA HANDLING ---
     const getQuestions = () => questions;
     const getStats = () => stats;
@@ -69,11 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Store the old state in case we need to revert
         const oldQuestions = [...questions];
         const oldStats = { ...stats };
 
-        // Optimistically update the UI
         questions = newQuestions;
         stats = newStats;
         updateUI();
@@ -86,7 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const savedObject = await Backendless.Data.of('user_data').save(dataToSave);
             console.log("Data saved successfully:", savedObject);
-            // If this was a new record, store its objectId for future updates
             if (!userDataObjectId) {
                 userDataObjectId = savedObject.objectId;
             }
@@ -94,10 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Error saving data to Backendless:", error);
             showAlert(`Could not save changes: ${error.message}`, "Save Error");
 
-            // *** FIX: Revert to the old state on failure ***
             questions = oldQuestions;
             stats = oldStats;
-            updateUI(); // Update the UI to show the reverted state
+            updateUI();
         }
     };
     
@@ -131,45 +156,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- INITIALIZATION ---
     const init = async () => {
-        // --- Paste your Backendless details here ---
         const BACKENDLESS_APP_ID = 'DFE02D6C-1668-4FEA-9DE5-C312B7E5888A'; 
         const BACKENDLESS_API_KEY = 'EBFE225A-3D16-4347-A1F6-B99A702A7B91';
-        // -----------------------------------------
 
         if (BACKENDLESS_APP_ID === 'YOUR_APP_ID' || BACKENDLESS_API_KEY === 'YOUR_JS_API_KEY') {
             showAlert('Please update script.js with your Backendless App ID and JS API Key.', 'Configuration Needed');
-            return; // Stop execution if not configured
+            return;
         }
 
         Backendless.initApp(BACKENDLESS_APP_ID, BACKENDLESS_API_KEY);
         
         await syncTime();
         calendarDate = getCorrectedDate();
+        setupEventListeners();
+        applyTheme();
 
         try {
             console.log("Attempting to validate existing login...");
             const isValidLogin = await Backendless.UserService.isValidLogin();
             if (isValidLogin) {
                 currentUser = await Backendless.UserService.getCurrentUser();
-                console.log("User session restored. User objectId:", currentUser.objectId);
+                console.log("User session restored. User email:", currentUser.email);
+                await fetchInitialData();
+                showApp();
             } else {
-                console.log("No valid session found. Logging in as guest...");
-                currentUser = await Backendless.UserService.loginAsGuest();
-                console.log("Logged in as guest. User objectId:", currentUser.objectId);
+                console.log("No valid session found. Showing login screen.");
+                showLogin();
             }
         } catch (error) {
-            console.error("Authentication error during init:", error);
-            showAlert(`Could not start a session: ${error.message}`, "Authentication Error");
-            return; // Stop if we can't get a user
+            console.error("Error during init validation:", error);
+            showLogin();
         }
-
-
-        if (currentUser) {
-            await fetchInitialData();
-        }
-        
-        setupEventListeners();
-        applyTheme();
     };
     
     const fetchInitialData = async () => {
@@ -204,8 +221,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         updateUI();
     };
+    
+    // --- EVENT HANDLERS & LISTENERS ---
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        const email = loginEmailInput.value;
+        const password = loginPasswordInput.value;
+        try {
+            currentUser = await Backendless.UserService.login(email, password, true); // stayLoggedIn = true
+            console.log("Login successful:", currentUser.email);
+            await fetchInitialData();
+            showApp();
+        } catch (error) {
+            console.error("Login failed:", error);
+            showAlert(`Login failed: ${error.message}`, "Login Error");
+        }
+    };
+
+    const handleRegister = async () => {
+        const email = loginEmailInput.value;
+        const password = loginPasswordInput.value;
+        
+        if (!email || !password) {
+            showAlert("Please enter both an email and a password to register.");
+            return;
+        }
+
+        const user = new Backendless.User();
+        user.email = email;
+        user.password = password;
+
+        try {
+            await Backendless.UserService.register(user);
+            console.log("Registration successful for:", email);
+            // Automatically log the new user in
+            await handleLogin({ preventDefault: () => {} }); // Pass a mock event object
+        } catch (error) {
+            console.error("Registration failed:", error);
+            showAlert(`Registration failed: ${error.message}`, "Registration Error");
+        }
+    };
+    
+    const handleLogout = async () => {
+        try {
+            await Backendless.UserService.logout();
+            console.log("Logout successful.");
+            showLogin();
+        } catch (error) {
+            console.error("Logout failed:", error);
+            showAlert(`Logout failed: ${error.message}`, "Logout Error");
+        }
+    };
+
 
     const setupEventListeners = () => {
+        loginForm.addEventListener('submit', handleLogin);
+        registerBtn.addEventListener('click', handleRegister);
+        logoutBtn.addEventListener('click', handleLogout);
+
         form.addEventListener('submit', handleFormSubmit);
         revisionList.addEventListener('click', handleRevisionListClick);
         todayRevisionList.addEventListener('click', handleRevisionListClick);
