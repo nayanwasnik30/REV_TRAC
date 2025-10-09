@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script>
-        // Set theme on initial load - this small script needs to stay in the head to prevent FOUC
+        // Set theme on initial load
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -26,12 +26,12 @@
                 <p class="text-md lg:text-lg text-gray-600 dark:text-gray-400 mt-2">Plan your spaced repetition for technical questions.</p>
             </div>
             <div class="flex items-center gap-4">
-                 <!-- Dark Mode Toggle -->
+                <!-- Dark Mode Toggle -->
                 <button id="dark-mode-toggle" class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none">
                     <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                     <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 </button>
-                 <!-- Compact Stats Section -->
+                <!-- Compact Stats Section -->
                 <div class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-lg h-fit w-full max-w-xs text-center">
                     <h2 class="text-lg font-semibold flex items-center justify-center gap-2 text-gray-900 dark:text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
@@ -78,6 +78,10 @@
                             <label for="question-link" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Question Link</label>
                             <input type="url" id="question-link" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="https://example.com/question">
                         </div>
+                        <div>
+                            <label for="question-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes / Solution</label>
+                            <textarea id="question-notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Add initial notes or solution approach here..."></textarea>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="question-topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Topic</label>
@@ -99,7 +103,7 @@
                         </div>
                         <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out flex items-center justify-center gap-2">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" /></svg>
-                            Add to Calendar
+                             Add to Calendar
                         </button>
                     </form>
                 </div>
@@ -107,7 +111,7 @@
 
             <!-- Right Column: Revision Schedule & Calendar -->
             <div class="lg:col-span-2 space-y-8">
-                 <!-- Today's Focus Section -->
+                <!-- Today's Focus Section -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-2xl font-semibold flex items-center gap-2 dark:text-white">
@@ -127,7 +131,7 @@
                     </div>
                 </div>
 
-                 <!-- Calendar Section -->
+                <!-- Calendar Section -->
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
                     <div id="calendar-header" class="flex items-center justify-between mb-4">
                         <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">&lt;</button>
@@ -159,10 +163,31 @@
                 </div>
             </div>
 
+            <!-- All Questions List Section -->
+            <div class="lg:col-span-3 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
+                 <div class="flex flex-col sm:flex-row justify-between items-center mb-4 border-b pb-2 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold dark:text-white">All Added Questions</h2>
+                    <div class="flex items-center gap-4 mt-2 sm:mt-0">
+                        <div id="difficulty-counts" class="text-sm text-gray-600 dark:text-gray-400 flex gap-3">
+                            <!-- Counts will be injected here -->
+                        </div>
+                        <select id="all-questions-difficulty-filter" class="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="">All Difficulties</option>
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="all-questions-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <!-- All unique questions will be injected here -->
+                </div>
+            </div>
+
         </main>
         
         <footer class="text-center mt-12 text-gray-500 dark:text-gray-400 text-sm">
-            <p>Built to help you ace your technical interviews.</p>
+            <p>Built to help you ace your technical interviews. Your data is now securely stored in the cloud!</p>
         </footer>
     </div>
 
@@ -255,6 +280,10 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <!-- Backendless SDK -->
+   
+    <script src="//api.backendless.com/sdk/js/latest/backendless.js"></script>
     <script src="script.js" defer></script>
 
 </body>
