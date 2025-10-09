@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Revision Calendar - Zenitsu Edition",
+  "version": "1.0",
+  "description": "A smart calendar to schedule and track your learning using spaced repetition.",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "128": "icon.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; script-src-elem 'self' https://cdn.tailwindcss.com https://www.gstatic.com; connect-src https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com wss://firestore.googleapis.com;"
+  }
+}
