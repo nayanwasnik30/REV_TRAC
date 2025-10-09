@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Store the old state in case we need to revert
+        const oldQuestions = [...questions];
+        const oldStats = { ...stats };
+
+        // Optimistically update the UI
         questions = newQuestions;
         stats = newStats;
         updateUI();
@@ -87,7 +92,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error("Error saving data to Backendless:", error);
-            showAlert(`Could not save data: ${error.message}`, "Save Error");
+            showAlert(`Could not save changes: ${error.message}`, "Save Error");
+
+            // *** FIX: Revert to the old state on failure ***
+            questions = oldQuestions;
+            stats = oldStats;
+            updateUI(); // Update the UI to show the reverted state
         }
     };
     
@@ -122,12 +132,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- INITIALIZATION ---
     const init = async () => {
         // --- Paste your Backendless details here ---
-        const BACKENDLESS_APP_ID = 'DFE02D6C-1668-4FEA-9DE5-C312B7E5888A'; // <-- PASTE YOUR APP ID HERE
-        const BACKENDLESS_API_KEY = 'EBFE225A-3D16-4347-A1F6-B99A702A7B91'; // <-- PASTE YOUR JS API KEY HERE
+        const BACKENDLESS_APP_ID = 'DFE02D6C-1668-4FEA-9DE5-C312B7E5888A'; 
+        const BACKENDLESS_API_KEY = 'EBFE225A-3D16-4347-A1F6-B99A702A7B91';
         // -----------------------------------------
 
         if (BACKENDLESS_APP_ID === 'YOUR_APP_ID' || BACKENDLESS_API_KEY === 'YOUR_JS_API_KEY') {
             showAlert('Please update script.js with your Backendless App ID and JS API Key.', 'Configuration Needed');
+            return; // Stop execution if not configured
         }
 
         Backendless.initApp(BACKENDLESS_APP_ID, BACKENDLESS_API_KEY);
@@ -136,19 +147,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         calendarDate = getCorrectedDate();
 
         try {
-            // Check if a user is already logged in
+            console.log("Attempting to validate existing login...");
             const isValidLogin = await Backendless.UserService.isValidLogin();
             if (isValidLogin) {
                 currentUser = await Backendless.UserService.getCurrentUser();
-                console.log("User session restored:", currentUser);
+                console.log("User session restored. User objectId:", currentUser.objectId);
             } else {
-                // If not, log in as a guest
+                console.log("No valid session found. Logging in as guest...");
                 currentUser = await Backendless.UserService.loginAsGuest();
-                console.log("Logged in as guest:", currentUser);
+                console.log("Logged in as guest. User objectId:", currentUser.objectId);
             }
         } catch (error) {
-            console.error("Authentication error:", error);
+            console.error("Authentication error during init:", error);
             showAlert(`Could not start a session: ${error.message}`, "Authentication Error");
+            return; // Stop if we can't get a user
         }
 
 
@@ -161,25 +173,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     
     const fetchInitialData = async () => {
-        if (!currentUser) return;
+        if (!currentUser) {
+            console.log("Fetch skipped: No current user.");
+            return;
+        }
+
+        console.log(`Fetching data for ownerId: '${currentUser.objectId}'`);
 
         try {
-            // Find the data record owned by the current user
             const queryBuilder = Backendless.DataQueryBuilder.create();
             queryBuilder.setWhereClause(`ownerId = '${currentUser.objectId}'`);
             const result = await Backendless.Data.of('user_data').find(queryBuilder);
+
+            console.log("Backendless fetch result:", result);
 
             if (result.length > 0) {
                 const userData = result[0];
                 console.log("Data fetched successfully:", userData);
                 questions = userData.questions || [];
                 stats = userData.stats || { streak: 0, lastCompletedDate: null, unlockedRewards: [] };
-                userDataObjectId = userData.objectId; // Store the objectId for updates
+                userDataObjectId = userData.objectId; 
+                console.log(`Found existing data. Loaded ${questions.length} questions.`);
             } else {
                 console.log("No existing data found for this user. A new record will be created on the first save.");
             }
         } catch (error) {
-            console.error("Error fetching initial data:", error);
+            console.error("Error fetching initial data from Backendless:", error);
             showAlert(`Could not load your data: ${error.message}`, "Data Load Error");
         }
         
@@ -223,6 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     const updateUI = () => {
         const currentQuestions = getQuestions();
+        console.log(`Updating UI with ${currentQuestions.length} questions.`);
         populateTopicFilter(currentQuestions);
         renderFormHeader();
         renderTodaysRevisions(currentQuestions);
